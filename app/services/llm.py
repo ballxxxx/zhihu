@@ -17,19 +17,50 @@ class LLMError(RuntimeError):
     pass
 
 
+def _escape_backslashes(text: str) -> str:
+    """把「反斜杠+字母」转成字面反斜杠:模型输出数学题时常带未转义的
+    LaTeX(如 \\frac、\\lim),直接 json.loads 会报 Invalid \\escape。"""
+    return re.sub(r"\\([A-Za-z])", r"\\\\\1", text)
+
+
+def _has_suspect_control(obj) -> bool:
+    """检查解析结果里是否混入了可疑控制字符(如 \\frac 被误读成换页符\\x0c)。"""
+    if isinstance(obj, str):
+        return any(0 <= ord(c) < 32 and c not in "\n\r\t" for c in obj)
+    if isinstance(obj, dict):
+        return any(_has_suspect_control(v) for v in obj.values())
+    if isinstance(obj, list):
+        return any(_has_suspect_control(v) for v in obj)
+    return False
+
+
 def _extract_json(text: str) -> dict:
-    """从模型输出中稳健提取 JSON 对象(容忍 ```json 代码块包裹)。"""
+    """从模型输出中稳健提取 JSON 对象(容忍 ```json 代码块包裹)。
+
+    解析失败或结果含可疑控制字符(LaTeX 反斜杠被 JSON 误读)时,
+    清洗反斜杠后重解析,最后退回花括号提取。
+    """
     text = text.strip()
     if text.startswith("```"):
         text = re.sub(r"^```(?:json)?\s*", "", text)
         text = re.sub(r"\s*```$", "", text)
     try:
-        return json.loads(text)
+        parsed = json.loads(text)
+        if not _has_suspect_control(parsed):
+            return parsed
     except json.JSONDecodeError:
-        match = re.search(r"\{.*\}", text, re.S)
-        if match:
+        pass
+    try:
+        return json.loads(_escape_backslashes(text))
+    except json.JSONDecodeError:
+        pass
+    match = re.search(r"\{.*\}", text, re.S)
+    if match:
+        try:
             return json.loads(match.group(0))
-        raise LLMError("无法从模型输出中解析 JSON")
+        except json.JSONDecodeError:
+            return json.loads(_escape_backslashes(match.group(0)))
+    raise LLMError("无法从模型输出中解析 JSON")
 
 
 class BaseChannel:
