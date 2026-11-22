@@ -5,7 +5,7 @@ FROM python:3.12-slim
 
 ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple \
+    PIP_INDEX_URL=https://mirrors.cloud.tencent.com/pypi/simple \
     ZHIHU_CLI=/usr/local/bin/zhihu-cli
 
 WORKDIR /app
@@ -17,7 +17,7 @@ RUN apt-get update && \
 
 COPY requirements-cloud.txt .
 RUN pip install -r requirements-cloud.txt && \
-    pip uninstall -y opencv-python && \
+    (pip uninstall -y opencv-python || true) && \
     pip install opencv-python-headless
 
 # zhihu-cli linux-amd64 0.6.3(sha256 校验)
