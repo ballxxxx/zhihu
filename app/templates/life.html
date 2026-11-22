@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>搭子参谋 · 每一条建议,都有真人经验背书</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'PingFang SC','Microsoft YaHei',sans-serif; background:linear-gradient(160deg,#eef4ff,#f8fafd 40%,#eef7ff); color:#1a1a1a; height:100vh; display:flex; flex-direction:column; }
+    header { background:linear-gradient(135deg,#0084ff,#0060e6 60%,#0048b8); color:#fff; padding:16px 22px; text-align:center; box-shadow:0 4px 16px rgba(0,96,230,.25); }
+    header h1 { font-size:20px; }
+    header p { font-size:12px; opacity:.85; margin-top:3px; }
+    #chat { flex:1; overflow-y:auto; padding:20px 16px 100px; max-width:760px; width:100%; margin:0 auto; }
+    .msg { margin-bottom:16px; display:flex; }
+    .msg.user { justify-content:flex-end; }
+    .bubble { max-width:82%; padding:12px 16px; border-radius:14px; font-size:14.5px; line-height:1.7; white-space:pre-wrap; word-break:break-word; }
+    .msg.user .bubble { background:linear-gradient(135deg,#0084ff,#0060e6); color:#fff; border-bottom-right-radius:4px; }
+    .msg.ai .bubble { background:#fff; box-shadow:0 2px 8px rgba(20,40,80,.08); border-bottom-left-radius:4px; }
+    .advice-card { margin:10px 0; padding:12px 14px; background:#f8fbff; border:1px solid #e3ecf7; border-radius:12px; }
+    .advice-card .sug { font-weight:600; margin-bottom:4px; }
+    .advice-card .why { font-size:13px; color:#555; margin-bottom:6px; }
+    .advice-card a { color:#0060e6; font-size:12.5px; text-decoration:none; }
+    .advice-card a:hover { text-decoration:underline; }
+    .meta { font-size:11.5px; color:#8a919f; margin-top:8px; }
+    .typing { color:#8a919f; font-size:13px; }
+    .typing::after { content:'…'; animation:dots 1.2s steps(4) infinite; }
+    @keyframes dots { 0%{content:''} 25%{content:'.'} 50%{content:'..'} 75%{content:'...'} }
+    #inputbar { position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid #e5e8ee; padding:12px 16px; box-shadow:0 -4px 16px rgba(20,40,80,.08); }
+    .inputwrap { max-width:760px; margin:0 auto; display:flex; gap:10px; }
+    #q { flex:1; padding:12px 16px; border:1px solid #dfe5ee; border-radius:24px; font-size:15px; outline:none; }
+    #q:focus { border-color:#0084ff; box-shadow:0 0 0 3px rgba(0,132,255,.12); }
+    #send { padding:0 26px; border:none; border-radius:24px; background:linear-gradient(135deg,#0084ff,#0060e6); color:#fff; font-size:15px; cursor:pointer; box-shadow:0 3px 10px rgba(0,96,230,.28); }
+    #send:disabled { background:#c8d6e8; box-shadow:none; cursor:not-allowed; }
+    .hint { text-align:center; color:#8a919f; font-size:12.5px; padding:30px 20px; }
+    .link-card { display:flex; align-items:center; gap:8px; margin:8px 0; padding:10px 12px; background:#f8fbff; border:1px solid #e3ecf7; border-radius:10px; }
+    .link-card .url { flex:1; color:#0060e6; font-size:13px; word-break:break-all; text-decoration:none; }
+    .link-card .url:hover { text-decoration:underline; }
+    .link-card .tag { font-size:11px; color:#8a919f; background:#eef2f8; padding:2px 8px; border-radius:10px; white-space:nowrap; }
+    .link-card .btn { border:none; background:#eaf3ff; color:#0060e6; padding:4px 12px; border-radius:14px; font-size:12px; cursor:pointer; white-space:nowrap; }
+    #pic { padding:0 18px; border:1px solid #dfe5ee; border-radius:24px; background:#fff; font-size:16px; cursor:pointer; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>🧭 搭子参谋</h1>
+  <p>每一条建议,都有知乎真人经验 + 全网公开信息背书,可点击溯源</p>
+  <p><a href="/" style="color:#fff;opacity:.9;font-size:12px;">← 返回主页(复习/记事/记录)</a></p>
+</header>
+<div id="chat">
+  <div class="hint">问我任何生活决策问题,比如:<br>
+  "周末去深圳湾吃海鲜,3个人,人均300,求推荐"<br>
+  "想去广州塔附近玩一天,有什么避坑提示"</div>
+</div>
+<div id="inputbar">
+  <div class="inputwrap">
+    <button id="pic" title="上传截图,识别其中的链接/二维码">📷</button>
+    <input id="q" placeholder="说说你的需求…(回车发送;也可直接 Ctrl+V 粘贴截图识别链接)">
+    <button id="send">发送</button>
+    <input type="file" id="file" accept="image/*" style="display:none">
+  </div>
+</div>
+<script>
+const chat = document.getElementById('chat');
+const q = document.getElementById('q');
+const send = document.getElementById('send');
+
+function addUser(text) {
+  chat.insertAdjacentHTML('beforeend',
+    `<div class="msg user"><div class="bubble">${text.replace(/</g,'&lt;')}</div></div>`);
+  chat.scrollTop = chat.scrollHeight;
+}
+function addAi(html) {
+  chat.insertAdjacentHTML('beforeend', `<div class="msg ai"><div class="bubble">${html}</div></div>`);
+  chat.scrollTop = chat.scrollHeight;
+}
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+
+async function ask() {
+  const text = q.value.trim();
+  if (!text) return;
+  addUser(text);
+  q.value = '';
+  send.disabled = true;
+  const tip = document.createElement('div');
+  tip.className = 'msg ai';
+  tip.innerHTML = '<div class="bubble typing">正在检索知乎真人经验和全网公开信息</div>';
+  chat.appendChild(tip);
+  chat.scrollTop = chat.scrollHeight;
+  try {
+    const r = await fetch('/api/life/chat', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({message: text})
+    });
+    const d = await r.json();
+    tip.remove();
+    if (d.detail) { addAi('⚠️ ' + esc(d.detail)); send.disabled = false; return; }
+    const intent = d.intent || {};
+    const cards = (d.advice || []).map(a =>
+      `<div class="advice-card"><div class="sug">💡 ${esc(a.建议)}</div>` +
+      `<div class="why">${esc(a.理由)}</div>` +
+      (a.来源链接 ? `<a href="${esc(a.来源链接)}" target="_blank">📎 ${esc(a.来源标题 || '查看原帖')} →</a>` : '') +
+      `</div>`).join('');
+    const meta = `<div class="meta">类别:${esc(intent.类别 || '?')} · 检索了 ${d.searched} 条知乎经验 + ${d.web_searched} 条全网信息 · 建议均附原始链接,可自行验证</div>`;
+    addAi((cards || '暂时没搜到合适的经验,换个说法试试?') + meta);
+  } catch(e) {
+    tip.remove();
+    addAi('⚠️ 请求失败,请重试');
+  }
+  send.disabled = false;
+}
+send.addEventListener('click', ask);
+q.addEventListener('keydown', e => { if (e.key === 'Enter') ask(); });
+
+// 识图取链:粘贴截图 / 上传图片 → 提取可点击的链接
+const pic = document.getElementById('pic');
+const fileInput = document.getElementById('file');
+
+async function extractLinks(file) {
+  addUser('📷 [识图取链] ' + file.name + (file.size ? ` (${Math.round(file.size/1024)}KB)` : ''));
+  send.disabled = true;
+  const tip = document.createElement('div');
+  tip.className = 'msg ai';
+  tip.innerHTML = '<div class="bubble typing">正在识别图片中的链接和二维码</div>';
+  chat.appendChild(tip);
+  chat.scrollTop = chat.scrollHeight;
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    const r = await fetch('/api/life/link-extract', { method: 'POST', body: fd });
+    const d = await r.json();
+    tip.remove();
+    if (d.detail) { addAi('⚠️ ' + esc(d.detail)); send.disabled = false; return; }
+    const links = d.links || [];
+    const cards = links.map(l =>
+      `<div class="link-card"><span class="tag">${l.source === '二维码' ? '🔳 二维码' : '🔤 文字'}</span>` +
+      `<a class="url" href="${esc(l.url)}" target="_blank">${esc(l.url)}</a>` +
+      `<button class="btn" onclick="navigator.clipboard.writeText('${esc(l.url)}').then(()=>{this.textContent='已复制'})">复制</button></div>`
+    ).join('');
+    addAi(`<div class="sug">🔗 识别到 ${links.length} 个链接,点击直接打开:</div>` + cards +
+      (links.length ? '' : `<div class="meta">${esc(d.hint || '没识别出链接,换个清晰一点的截图试试')}</div>`));
+  } catch(e) {
+    tip.remove();
+    addAi('⚠️ 识别失败,请重试');
+  }
+  send.disabled = false;
+}
+
+pic.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', () => {
+  if (fileInput.files && fileInput.files[0]) extractLinks(fileInput.files[0]);
+  fileInput.value = '';
+});
+document.addEventListener('paste', e => {
+  const items = (e.clipboardData || {}).items;
+  if (!items) return;
+  for (const it of items) {
+    if (it.type && it.type.startsWith('image/')) {
+      const f = it.getAsFile();
+      if (f) { e.preventDefault(); extractLinks(f); }
+      break;
+    }
+  }
+});
+</script>
+</body>
+</html>

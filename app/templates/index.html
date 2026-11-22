@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>搭子参谋 FinalMate · 你的每一次选择,都有真人经验参谋</title>
+  <link rel="stylesheet" href="/static/app.css?v=10">
+</head>
+<body>
+<div class="blob b1"></div>
+<div class="blob b2"></div>
+<div class="blob b3"></div>
+<div class="ring r1"></div>
+<div class="ring r2"></div>
+<div class="wrap">
+  <header class="top">
+    <div class="logo">🧭 搭子参谋 <span>FinalMate</span></div>
+    <div class="slogan">你的每一次选择——从今晚吃什么到期末怎么复习——都有真人经验参谋</div>
+    <div class="top-tabs">
+      <span class="top-tab on" data-scene="chat">💬 参谋</span>
+      <span class="top-tab" data-scene="study">📚 复习</span>
+      <span class="top-tab" data-scene="notes">📝 记事</span>
+      <span class="top-tab" data-scene="records">🗂 记录</span>
+    </div>
+  </header>
+
+  <!-- ============ 参谋(主体) ============ -->
+  <div id="scene-chat">
+    <section class="panel" id="life-panel">
+      <h2>💬 参谋 <small>说需求,给带真人经验背书的建议;提到考试会自动引导复习</small></h2>
+      <div class="quick-asks">
+        <span class="quick-chip" data-q="周末去深圳湾吃海鲜,3个人,人均300,求推荐">🦞 周末吃海鲜求推荐</span>
+        <span class="quick-chip" data-q="想去广州塔附近玩一天,有什么避坑提示">🎡 广州塔一日游避坑</span>
+        <span class="quick-chip" data-q="最近在健身减脂,有什么清淡餐厅推荐">🥗 健身清淡餐厅</span>
+        <span class="quick-chip" data-q="12月19号要考大学英语四级了,有点慌">📘 四级考前很慌</span>
+      </div>
+      <div class="daily-card" id="daily-card" hidden></div>
+      <div class="loc-bar" id="loc-status">📍 定位中…</div>
+      <div class="life-chat" id="life-chat">
+        <div class="hint">👇 点上面的快捷问题,或直接输入你的需求</div>
+      </div>
+      <div class="life-input">
+        <input id="life-q" placeholder="说说你的需求…(回车发送;也可 Ctrl+V 粘贴截图识别链接)">
+        <button id="life-float-btn" title="启动屏幕上的悬浮截图按钮:看视频时点它框选链接区域,自动识别打开(首次浏览器会询问是否打开外部应用)">🖼 悬浮截图</button>
+        <button id="life-pic-btn" title="上传截图,识别其中的链接/二维码(视频里的链接点不了?截图丢过来)">📷</button>
+        <button id="life-rule-btn" title="上传保研细则/奖学金评定/培养方案等规则文件,AI 用人话解读+找隐藏陷阱">📄 解读文件</button>
+        <button id="life-send">发送</button>
+      </div>
+      <input type="file" id="life-rule-file" accept=".pdf,.docx,.txt,.md,.png,.jpg,.jpeg" hidden>
+      <input type="file" id="life-pic-file" accept="image/*" hidden>
+    </section>
+  </div>
+
+  <!-- ============ 复习(功能) ============ -->
+  <div id="scene-study" hidden>
+  <section class="panel" id="upload-panel">
+    <h2>📚 期末复习方案 <small>上传课件或只填课程名,30秒生成</small></h2>
+    <div class="drop" id="drop">
+      <input type="file" id="file" accept=".pdf,.docx,.txt,.md,.png,.jpg,.jpeg" hidden>
+      <div class="drop-text">点击选择或拖拽文件到此处<br><small>支持 PDF / Word / txt / 图片(OCR) · 20MB 以内 · 不传也行</small></div>
+    </div>
+    <div class="row">
+      <label>课程名
+        <input type="text" id="course" placeholder="如:高等数学 / 大学英语四级" list="courses">
+        <datalist id="courses">
+          <option value="高等数学"><option value="高中数学"><option value="线性代数"><option value="概率论">
+          <option value="高中英语"><option value="大学英语四级"><option value="大学英语六级"><option value="雅思"><option value="托福">
+        </datalist>
+      </label>
+      <label>考试日期
+        <input type="date" id="exam_date">
+      </label>
+      <label>试卷风格
+        <select id="exam-style" style="width:100%;margin-top:4px;padding:9px 12px;border:1px solid #dfe5ee;border-radius:10px;font-size:14px;">
+          <option value="">默认</option>
+        </select>
+      </label>
+      <button id="btn-generate" disabled>⚡ 生成复习方案</button>
+    </div>
+    <div class="course-shortcuts">
+      <span class="shortcut-label">快速选课:</span>
+      <span class="course-chip" data-course="高等数学">📐 高等数学</span>
+      <span class="course-chip" data-course="高中数学">📏 高中数学</span>
+      <span class="course-chip" data-course="大学英语四级">📘 四级</span>
+      <span class="course-chip" data-course="大学英语六级">📗 六级</span>
+      <span class="course-chip" data-course="雅思">🎯 雅思</span>
+      <span class="course-chip" data-course="托福">🌍 托福</span>
+    </div>
+    <div id="chapters-box" class="chapters" hidden>
+      <div class="chapters-title">📖 选择考试范围 <small>(不选=全部;仅在线生成模式生效)</small></div>
+      <div class="chapters-grid" id="chapters-grid"></div>
+    </div>
+    <div id="progress" class="progress" hidden>
+      <div class="bar"><div class="fill" id="bar-fill"></div></div>
+      <div class="stage" id="stage-text">准备中…</div>
+    </div>
+    <div id="result" class="result" hidden>
+      <a id="report-link" target="_blank">🎉 查看完整复习报告(新窗口打开)</a>
+    </div>
+  </section>
+  </div>
+
+  <!-- ============ 记事(四象限) ============ -->
+  <div id="scene-notes" hidden>
+  <section class="panel">
+    <h2>📝 四象限记事本 <small>记下待办,按重要/紧急分类;不知道放哪就让 AI 建议</small></h2>
+    <div class="row">
+      <input type="text" id="note-text" placeholder="如:周五下午3点 去图书馆还书 / 12.19 考四级" style="flex:2">
+      <select id="note-quadrant" style="flex:1;margin-top:0;padding:13px 14px;border:1px solid #dfe5ee;border-radius:14px;font-size:14px;">
+        <option value="1">Ⅰ 重要且紧急</option>
+        <option value="2">Ⅱ 重要不紧急</option>
+        <option value="3">Ⅲ 紧急不重要</option>
+        <option value="4">Ⅳ 不重要不紧急</option>
+      </select>
+      <button id="btn-note-suggest">🤖 AI建议象限</button>
+      <button id="btn-note-add">＋ 添加</button>
+    </div>
+    <div id="note-suggest-result" class="empty" style="margin-top:10px"></div>
+    <div class="note-quadrant" id="note-board"></div>
+  </section>
+  </div>
+
+  <!-- ============ 记录 ============ -->
+  <div id="scene-records" hidden>
+  <section class="panel">
+    <h2>🗂 我的复习方案</h2>
+    <div id="history"><div class="empty">加载中…</div></div>
+  </section>
+  <section class="panel">
+    <h2>🔎 知识库检索 <small>双通道:我的资料 + 全网知识</small></h2>
+    <div class="row">
+      <input type="text" id="search-q" placeholder="如:极限 / 定语从句" style="flex:1">
+      <button id="btn-search-local" class="tab-btn on">📁 我的资料</button>
+      <button id="btn-search-global" class="tab-btn">🌐 全网知识</button>
+    </div>
+    <div id="search-result"><div class="empty">输入关键词,跨资料全文检索</div></div>
+  </section>
+  <section class="panel">
+    <h2>✅ 待办识别 <small>AI 帮你分析事项,考试类自动关联复习</small></h2>
+    <div class="row">
+      <input type="text" id="todo-text" placeholder="如:12月19日考大学英语四级 / 周五前交数学作业" style="flex:1">
+      <button id="btn-todo">分析</button>
+    </div>
+    <div id="todo-result"><div class="empty">输入你的待办事项,AI 会判断类型并给建议</div></div>
+  </section>
+  </div>
+
+  <footer>由「搭子参谋」驱动 · 数据来自知乎开放平台 · 建议均附原帖链接可溯源 · 内容仅供参考</footer>
+</div>
+<script src="/static/app.js?v=11"></script>
+</body>
+</html>

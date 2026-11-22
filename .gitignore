@@ -1,0 +1,12 @@
+.env
+data/*.db
+data/*.db-journal
+data/uploads/
+data/last_result.json
+data/pipeline_result.json
+data/report_sample.html
+__pycache__/
+*.pyc
+.venv/
+venv/
+scripts/*.png

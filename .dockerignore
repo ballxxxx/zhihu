@@ -1,0 +1,14 @@
+__pycache__
+*.pyc
+tests
+scripts
+*.md
+*.docx
+.env
+.git
+data/uploads
+data/*.db
+data/*.db-journal
+data/last_result.json
+data/pipeline_result.json
+data/report_sample.html
