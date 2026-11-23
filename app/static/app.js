@@ -382,6 +382,68 @@ async function adviceToTodo(i) {
   }
 }
 
+// 今日外刊:全网公开英文新闻 + AI 中文导读
+async function loadNews() {
+  const box = $("news-result");
+  box.innerHTML = '<div class="empty">正在拉取全网公开新闻…(约10-20秒)</div>';
+  try {
+    const d = await (await fetch('/api/news/today')).json();
+    if (d.detail) { box.innerHTML = `<div class="empty">⚠️ ${lifeEsc(d.detail)}</div>`; return; }
+    const news = d.news || [];
+    if (!news.length) { box.innerHTML = '<div class="empty">暂时没拉到新闻,稍后再试</div>'; return; }
+    box.innerHTML = news.map(n =>
+      `<div class="news-card"><span class="tag">${lifeEsc(n.分类 || '新闻')}</span>` +
+      `<a class="t" href="${lifeEsc(n.链接)}" target="_blank">${lifeEsc(n.标题)}</a>` +
+      `<div class="zh">💡 ${lifeEsc(n.导读)}</div>` +
+      `<div class="src">来源:${lifeEsc(n.来源 || '公开网页')} · 点击标题查看原文</div></div>`
+    ).join('');
+  } catch (e) { box.innerHTML = '<div class="empty">⚠️ 拉取失败,请重试</div>'; }
+}
+$("btn-news").addEventListener("click", loadNews);
+
+// 数据洞察:大脑地图 / 每周反思 / 人物卡片
+async function loadInsight(kind) {
+  const box = $("insight-result");
+  box.innerHTML = '<div class="empty">⏳ 分析中…</div>';
+  try {
+    if (kind === "map") {
+      const d = await (await fetch('/api/insight/map')).json();
+      const cats = d.categories || [];
+      const max = Math.max(1, ...cats.map(c => c.n));
+      const bars = cats.map(c =>
+        `<div class="cat-bar"><span class="cat-name">${lifeEsc(c.name)}</span>` +
+        `<span class="cat-track"><i style="width:${Math.round(c.n / max * 100)}%"></i></span>` +
+        `<span class="cat-n">${c.n}</span></div>`).join('');
+      const tl = (d.timeline || []).slice(0, 12).map(t =>
+        `<div class="tl-item"><span class="tl-time">${lifeEsc(t.time)}</span>` +
+        `<span class="tl-cat">${lifeEsc(t.category)}</span>${lifeEsc(t.message)}</div>`).join('');
+      const fb = d.feedbacks || {};
+      box.innerHTML =
+        `<div class="insight-title">🗺 话题分布</div>${bars || '<div class="empty">还没有对话数据</div>'}` +
+        `<div class="insight-title">🕐 近期动向时间线</div>${tl || '<div class="empty">暂无</div>'}` +
+        `<div class="insight-title">📊 反馈闭环</div><div class="empty">有用 ${fb.useful || 0} · 有误 ${fb.wrong || 0} — 你的反馈会用于持续改进内容质量</div>`;
+    } else if (kind === "weekly") {
+      const d = await (await fetch('/api/insight/weekly', { method: 'POST' })).json();
+      box.innerHTML = `<div class="advice-card"><div class="sug">📅 每周反思卡片</div>` +
+        `<div class="why">🔍 ${lifeEsc(d.回顾 || '')}</div>` +
+        `<div class="why">💡 ${lifeEsc(d.建议 || '')}</div>` +
+        `<div class="why">🌟 ${lifeEsc(d.亮点 || '')}</div></div>`;
+    } else if (kind === "persons") {
+      const d = await (await fetch('/api/insight/persons', { method: 'POST' })).json();
+      const ps = d.persons || [];
+      box.innerHTML = ps.length
+        ? `<div class="insight-title">👥 提到的人</div>` + ps.map(p =>
+          `<div class="person-card"><div class="p-name">${lifeEsc(p.称呼 || '')}</div>` +
+          `<div class="why">💬 ${lifeEsc(p.话题 || '')}</div>` +
+          (p.建议 ? `<div class="why">💡 ${lifeEsc(p.建议)}</div>` : '') + `</div>`).join('')
+        : '<div class="empty">最近的对话里没有提到具体的人</div>';
+    }
+  } catch (e) { box.innerHTML = '<div class="empty">⚠️ 分析失败,请重试</div>'; }
+}
+$("btn-insight-map").addEventListener("click", () => loadInsight("map"));
+$("btn-insight-weekly").addEventListener("click", () => loadInsight("weekly"));
+$("btn-insight-persons").addEventListener("click", () => loadInsight("persons"));
+
 // 快捷提问
 document.querySelectorAll(".quick-chip").forEach((chip) => {
   chip.addEventListener("click", () => {

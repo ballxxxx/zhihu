@@ -26,9 +26,11 @@ def check(name, cond, detail=""):
         print(f"FAIL  {name}  {detail[:200]}")
 
 
-def chat(msg, sid, timeout=180):
-    r = httpx.post(f"{BASE}/api/life/chat",
-                   json={"message": msg, "session_id": sid}, timeout=timeout)
+def chat(msg, sid, timeout=180, location=None):
+    payload = {"message": msg, "session_id": sid}
+    if location:
+        payload["location"] = location
+    r = httpx.post(f"{BASE}/api/life/chat", json=payload, timeout=timeout)
     r.raise_for_status()
     return r.json()
 
@@ -81,6 +83,12 @@ with open("D:/claude code projects/screen-link/scripts/test_screen.png", "rb") a
                    files={"file": ("test.png", f, "image/png")}, timeout=180)
 d = r.json()
 check("识图取链 → 3 链接", r.status_code == 200 and d.get("count") == 3, str(d)[:200])
+
+# 8b. 位置场景:有定位说"附近" → 直接推荐;无定位 → 追问位置
+d = chat("在我附近找吃的", SID_FU + "-loc", location="江门市")
+check("位置场景 → 有定位直接推荐", (not d.get("is_followup")) and len(d.get("advice") or []) >= 1)
+d = chat("在我附近找吃的", SID_FU + "-noloc")
+check("位置场景 → 无定位追问位置", bool(d.get("is_followup")))
 
 # 9. 今日回顾
 d = httpx.get(f"{BASE}/api/life/daily", timeout=30).json()
@@ -168,5 +176,17 @@ print("== 待办分析 ==")
 r = httpx.post(f"{BASE}/api/todo/analyze", json={"text": "12月19日考大学英语四级"}, timeout=120)
 check("待办分析 → 识别考试类", r.status_code == 200 and r.json().get("type") == "考试",
       r.text[:150])
+
+# ---------- 今日外刊与数据洞察 ----------
+print("== 今日外刊与数据洞察 ==")
+r = httpx.get(f"{BASE}/api/news/today", timeout=240)
+d = r.json()
+check("今日外刊 → 双语新闻", r.status_code == 200 and len(d.get("news") or []) >= 3, r.text[:150])
+d = httpx.get(f"{BASE}/api/insight/map", timeout=30).json()
+check("数据洞察 → 大脑地图", isinstance(d.get("timeline"), list) and isinstance(d.get("categories"), list))
+r = httpx.post(f"{BASE}/api/insight/weekly", timeout=240)
+check("数据洞察 → 每周反思", r.status_code == 200 and bool(r.json().get("建议")), r.text[:150])
+r = httpx.post(f"{BASE}/api/insight/persons", timeout=240)
+check("数据洞察 → 人物卡片", r.status_code == 200 and isinstance(r.json().get("persons"), list))
 
 print(f"\n===== {passed} PASS / {failed} FAIL =====")

@@ -11,7 +11,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from app import models
-from app.routers import ai, generate, history, life, notes, upload
+from app.routers import ai, generate, history, life, more, notes, upload
 from app.services.llm import LLMError, get_channel
 
 models.init_db()
@@ -21,6 +21,7 @@ app.include_router(generate.router)
 app.include_router(history.router)
 app.include_router(ai.router)
 app.include_router(life.router)
+app.include_router(more.router)
 app.include_router(notes.router)
 
 STATIC_DIR = Path(__file__).parent / "static"

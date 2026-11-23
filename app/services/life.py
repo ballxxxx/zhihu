@@ -28,6 +28,12 @@ INTENT_PROMPT = """分析用户的需求,按 JSON 输出,只输出 JSON:
 6. 用户要某个场景的避坑清单/指南/要注意什么/有哪些坑(如"考研择校避坑""租房要注意什么""第一次买XX有什么坑")→ "避坑清单";
 7. 其余按内容判断。
 
+用户当前位置(浏览器定位):{location}
+
+追问补充规则:
+- 位置已知且用户说"附近/周边/这附近/这里"等时,地点视为已知(即当前位置),即使没提预算/人数也**不要追问**,直接给推荐(按人均50-100元的通用预算);
+- 位置未知(显示"未知")且用户说"附近/周边/这附近"时,**必须追问位置**(问"你在哪个城市?");
+- 其余情况仅当预算/人数/时间等关键信息不足时才追问。
 用户输入:「{text}」"""
 
 MEMORY_QA_PROMPT = """以下是用户在本产品中留下的历史记录(按时间倒序):
@@ -217,8 +223,10 @@ def search_web_info(keywords: str, count: int = 5, place: str = "") -> list[dict
     return entries[:8]
 
 
-def analyze_intent(text: str) -> dict:
-    data = DeepSeekChannel().chat_json(INTENT_PROMPT.format(text=text))
+def analyze_intent(text: str, location: str = "") -> dict:
+    data = DeepSeekChannel().chat_json(
+        INTENT_PROMPT.format(text=text, location=str(location or "未知"))
+    )
     return data
 
 
@@ -264,7 +272,7 @@ def build_advice(text: str, session_id: str | None = None, location: str | None 
             "position_answer": answer,
         }
 
-    intent = analyze_intent(text)
+    intent = analyze_intent(text, location)
     if intent.get("类别") == "考试学习":
         return {
             "intent": intent,

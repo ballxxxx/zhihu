@@ -1,0 +1,7 @@
+{
+  "envId": "near-rattlesnake-d3evklx68a01eb0",
+  "$schema": "https://static.cloudbase.net/cli/cloudbaserc.schema.json",
+  "cloudrun": {
+    "name": "finalmate"
+  }
+}
