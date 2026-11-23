@@ -1,16 +1,17 @@
 // 搭子参谋前端逻辑:双场景(学习/生活)
 const $ = (id) => document.getElementById(id);
 
-// ---------- 场景切换(参谋/复习/记录) ----------
+// ---------- 场景切换(参谋/复习/记事/记录/外刊) ----------
 function switchScene(scene) {
   document.querySelectorAll(".top-tab").forEach((t) => t.classList.toggle("on", t.dataset.scene === scene));
   $("scene-chat").hidden = scene !== "chat";
   $("scene-study").hidden = scene !== "study";
   $("scene-notes").hidden = scene !== "notes";
   $("scene-records").hidden = scene !== "records";
-  // 场景背景:生活暖色 / 学习蓝色
+  $("scene-news").hidden = scene !== "news";
+  // 场景背景:生活暖色 / 学习与外刊蓝色
   document.body.classList.toggle("scene-chat", scene === "chat");
-  document.body.classList.toggle("scene-study", scene === "study");
+  document.body.classList.toggle("scene-study", scene === "study" || scene === "news");
   if (scene === "chat") loadDaily();
 }
 document.querySelectorAll(".top-tab").forEach((tab) => {
