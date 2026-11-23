@@ -329,6 +329,13 @@ footer { text-align:center; color:#9aa3b2; font-size:12.5px; margin-top:14px; }
   border:1px solid #d6e7fb; border-radius:14px; transition:all .15s; }
 .person-card:hover { box-shadow:var(--sh-sm); transform:translateY(-1px); }
 .person-card .p-name { font-weight:800; font-size:14.5px; margin-bottom:4px; }
+.source-card { padding:16px 18px; background:linear-gradient(180deg,#f0f7ff,#fff);
+  border:1px solid #d6e7fb; border-radius:14px; margin-bottom:10px; transition:all .15s; }
+.source-card:hover { box-shadow:var(--sh-md); transform:translateY(-1px); }
+.source-card .s-name { font-weight:800; font-size:15px; margin-bottom:4px; }
+.source-card .why { font-size:13.5px; color:var(--ink-2); margin-bottom:6px; }
+.source-card a { color:#0060e6; font-size:13px; font-weight:600; text-decoration:none; }
+.source-card a:hover { text-decoration:underline; }
 
 /* ============================================================
    📱 移动端适配
