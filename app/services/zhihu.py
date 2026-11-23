@@ -39,9 +39,12 @@ def search_zhihu(query: str, count: int = 5, timeout: int = 90) -> str:
     )
 
 
-def search_global(query: str, count: int = 5, timeout: int = 90) -> str:
-    """全网搜索:检索新闻、官网、行业媒体和公开网页(含美团/点评等公开商户页)。"""
-    return _run(
-        ["search", "global", "--query", query, "--count", str(count), "--timeout", f"{timeout}s"],
-        timeout=timeout + 30,
-    )
+def search_global(query: str, count: int = 5, timeout: int = 90, filter_expr: str | None = None) -> str:
+    """全网搜索:检索新闻、官网、行业媒体和公开网页(含美团/点评等公开商户页)。
+
+    filter_expr 为开放平台高级筛选表达式,如 'host=="www.bbc.com"'。
+    """
+    args = ["search", "global", "--query", query, "--count", str(count), "--timeout", f"{timeout}s"]
+    if filter_expr:
+        args += ["--filter", filter_expr]
+    return _run(args, timeout=timeout + 30)
