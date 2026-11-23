@@ -383,12 +383,13 @@ async function adviceToTodo(i) {
   }
 }
 
-// 今日外刊:全网公开英文新闻 + AI 中文导读
+// 今日外刊:按兴趣搜公开英文新闻 + AI 中文导读
 async function loadNews() {
   const box = $("news-result");
-  box.innerHTML = '<div class="empty">正在拉取全网公开新闻…(约10-20秒)</div>';
+  const kw = ($("news-kw") || {}).value || "";
+  box.innerHTML = `<div class="empty">正在按「${lifeEsc(kw || "综合")}」拉取公开新闻…(约10-20秒)</div>`;
   try {
-    const d = await (await fetch('/api/news/today')).json();
+    const d = await (await fetch('/api/news/today?keyword=' + encodeURIComponent(kw))).json();
     if (d.detail) { box.innerHTML = `<div class="empty">⚠️ ${lifeEsc(d.detail)}</div>`; return; }
     const news = d.news || [];
     if (!news.length) { box.innerHTML = '<div class="empty">暂时没拉到新闻,稍后再试</div>'; return; }
@@ -401,6 +402,14 @@ async function loadNews() {
   } catch (e) { box.innerHTML = '<div class="empty">⚠️ 拉取失败,请重试</div>'; }
 }
 $("btn-news").addEventListener("click", loadNews);
+$("news-kw").addEventListener("keydown", (e) => { if (e.key === "Enter") loadNews(); });
+// 兴趣快捷词:填入关键词并直接搜索
+document.querySelectorAll("#scene-news .quick-chip").forEach((chip) => {
+  chip.addEventListener("click", () => {
+    $("news-kw").value = chip.dataset.kw;
+    loadNews();
+  });
+});
 
 // 数据洞察:大脑地图 / 每周反思 / 人物卡片
 async function loadInsight(kind) {

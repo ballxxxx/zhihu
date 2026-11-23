@@ -29,8 +29,12 @@ NEWS_PROMPT = """以下是全网搜索到的新闻条目(标题+摘要+url):
 - 只输出 JSON。"""
 
 
-def fetch_news() -> dict:
-    """聚合权威源定向检索 + 全网自由检索,交给 DeepSeek 筛选+生成导读。"""
+def fetch_news(keyword: str = "") -> dict:
+    """聚合权威源定向检索 + 全网自由检索,交给 DeepSeek 筛选+生成导读。
+
+    keyword 为用户兴趣关键词(如 AI/篮球/音乐),为空时输出综合新闻。
+    """
+    kw = keyword.strip()[:30]
     seen: set[str] = set()
     entries: list[dict] = []
 
@@ -40,15 +44,17 @@ def fetch_news() -> dict:
                 seen.add(e["url"])
                 entries.append(e)
 
-    # 1) 权威外刊源定向(host 过滤,每源试两个查询词)
-    for name, host in SOURCES:
-        for q in ("news", "world news"):
+    # 1) 权威外刊源定向(host 过滤);有关键词时按兴趣检索
+    source_queries = [f"{kw} news", f"{kw} report"] if kw else ["news", "world news"]
+    for _name, host in SOURCES:
+        for q in source_queries:
             try:
                 add(zhihu.search_global(q, count=5, filter_expr=f'host=="{host}"'))
             except Exception:
                 continue
     # 2) 全网自由检索兜底
-    for query in QUERIES:
+    generic = [f"{kw} 英文新闻", f"{kw} 最新动态"] if kw else list(QUERIES)
+    for query in generic:
         try:
             add(zhihu.search_global(query, count=5))
         except Exception:
@@ -59,4 +65,4 @@ def fetch_news() -> dict:
     ) or "(无)"
     data = DeepSeekChannel().chat_json(NEWS_PROMPT.format(items=items_text))
     news = data.get("新闻") or []
-    return {"news": [n for n in news if isinstance(n, dict) and n.get("链接")][:5]}
+    return {"news": [n for n in news if isinstance(n, dict) and n.get("链接")][:5], "keyword": kw}

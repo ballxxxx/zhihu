@@ -9,9 +9,9 @@ router = APIRouter()
 
 
 @router.get("/api/news/today")
-def news_today() -> dict:
+def news_today(keyword: str = "") -> dict:
     try:
-        return news.fetch_news()
+        return news.fetch_news(keyword)
     except LLMError as exc:
         raise HTTPException(status_code=502, detail=str(exc))
 
